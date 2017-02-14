@@ -9,8 +9,97 @@ cryptBase::cryptBase()
 }
 cryptBase::~cryptBase()
 {
+    
 
 }
+/** 
+ get a uuid string len = 36:  from uuidgen \n
+  652a4ecf-3db8-4f4e-96fe-eb476e1d6212
+ */
+string  cryptBase::uuid()
+{
+    char buf[40];
+    char cmd[]="uuidgen";
+    string str;
+    int len;
+    FILE * pf;
+    str = "";
+    pf = popen(cmd,"r");
+    if (pf == NULL)
+    {
+        printf("no uuidgen command error !!!\n");
+        return str;
+    }
+    if(fgets(buf,100,pf) == NULL)
+    {
+         printf("no uuidgen gets error !!!\n");
+        return str;
+    }
+    buf[36] =0;
+     str = buf; 
+    pclose(pf);
+    return str;
+}
+/**
+ *  uuid  from rand , eachtime first call is the same;
+ */
+string  cryptBase::uuid1()
+{
+    char buf[34];
+    string str;
+    int len;
+    len = uuid1((char *)buf);
+    if (len >0) str = buf;
+    else str = "";
+    return str;
+}
+/**
+ *  uuid  from rand , eachtime first call is the same;
+ */
+int cryptBase::uuid1( char *buf)
+{
+    const char *c = "89ab";
+    char *p = buf;
+    int n;
+  
+    for( n = 0; n < 16; ++n )
+    {
+        int b = rand()%255;
+        //printf("%0X",b);
+        switch( n )
+        {
+            case 6:
+                sprintf(p,"4%x", b%15 );
+                break;
+            case 8:
+                sprintf(p, "%c%x",c[rand()%strlen( c )], b%15 );
+                break;
+            default:
+                sprintf( p, "%02x",b );
+                break;
+        }
+  
+        p += 2;
+  
+        switch( n )
+        {
+            case 3:
+            case 5:
+            case 7:
+            case 9:
+                *p++ = '-';
+                break;
+        }
+    }//
+  
+    *p = 0;
+    return strlen(buf);
+}
+/**
+ *  getRsaPubFromChar(char *keyChar)
+ * 
+ * @return RSA* 
+ */
 RSA* cryptBase::getRsaPubFromChar(char *keyChar)
 {
    RSA *key;
@@ -36,7 +125,11 @@ RSA* cryptBase::getRsaPubFromChar(char *keyChar)
    BIO_free(b);
    return key;
 }
-
+/**
+ * getRsaPriFromFile(char *priKeyFile)
+ * 
+ * @return RSA* 
+ */
 RSA* cryptBase::getRsaPriFromFile(char *priKeyFile)
 {
    RSA *key;
@@ -55,6 +148,9 @@ RSA* cryptBase::getRsaPriFromFile(char *priKeyFile)
    }
    return key;
 }
+/**
+ * getRsaPubFromFile(char *pubKeyFile)
+ */
 RSA* cryptBase::getRsaPubFromFile(char *pubKeyFile)
 {
    RSA *key;
@@ -73,19 +169,34 @@ RSA* cryptBase::getRsaPubFromFile(char *pubKeyFile)
    }
    return key;
 }
+/**
+ * 
+ * get length of output buf. for asymeetry  encrypt;
+ * 
+ */
 int cryptBase::lenOfEncryptP(int len)
 {
    int n;
    n = len / BUFSIZE0;
    return BUFSIZE / 8 + n * BUFSIZE / 8;
 }
-
+/**
+ * 
+ * get maximum length of output buf. for asymeetry  decrypt;
+ * 
+ */
 int cryptBase::lenOfDecryptP(int len)
 {
    int n;
    n = len / (BUFSIZE / 8);
    return BUFSIZE0 + n * BUFSIZE0;
 }
+
+/**
+ * 
+ *   asymmetry  encrypt use publick Key RSA *;
+ * 
+ */
 int cryptBase::encryptPubkey(RSA *key, char *inBuf, int inLen, char *outBuf)
 {
    unsigned char buff[BUFSIZE0];
@@ -156,6 +267,11 @@ int cryptBase::encryptPubkey(RSA *key, char *inBuf, int inLen, char *outBuf)
    len = buf1 - outBuf + ret;
    return len;
 }
+/**
+ * 
+ *   asymmetry  decrypt use private  Key RSA *;
+ * 
+ */
 int cryptBase::decryptPrikey(RSA *key, char *inBuf, int inLen, char *outBuf)
 {
 
@@ -215,6 +331,11 @@ int cryptBase::decryptPrikey(RSA *key, char *inBuf, int inLen, char *outBuf)
    return len;
 }
 //-------------------------------------------------------------------------------------------
+/**
+ * 
+ *   asymmetry  encrypt use RSA * mode :0:publicKey, 1:privateKey;
+ * 
+ */
 int cryptBase::encryptPkey(int mode, RSA *key, char *inBuf, int inLen, char *outBuf)
 {
    unsigned char buff[BUFSIZE0];
@@ -289,6 +410,12 @@ int cryptBase::encryptPkey(int mode, RSA *key, char *inBuf, int inLen, char *out
    len = buf1 - outBuf + ret;
    return len;
 }
+/**
+ * 
+ *   asymmetry  decrypt use RSA * mode :0:privateKey;,
+ *   1:publicKey
+ * 
+ */
 int cryptBase::decryptPkey(int mode, RSA *key, char *inBuf, int inLen, char *outBuf)
 {
 
@@ -351,6 +478,11 @@ int cryptBase::decryptPkey(int mode, RSA *key, char *inBuf, int inLen, char *out
    return len;
 }
 //----------------------------------------------------------------------------------
+/**
+ * 
+ *   asymmetry  encrypt use public Char
+ * 
+ */
 int cryptBase::encryptPubChar(char *pubKeyChar, char *inBuf, int inLen, char *outBuf)
 {
    RSA *key;
@@ -362,7 +494,12 @@ int cryptBase::encryptPubChar(char *pubKeyChar, char *inBuf, int inLen, char *ou
    }
    return encryptPubkey(key, inBuf, inLen, outBuf);
 }
-
+/**
+ * 
+ *   asymmetry  decrypt use  publicKey Char,
+ *    
+ * 
+ */
 int cryptBase::decryptPubChar(char *pubKeyChar, char *inBuf, int inLen, char *outBuf)
 {
    RSA *key;
@@ -375,6 +512,13 @@ int cryptBase::decryptPubChar(char *pubKeyChar, char *inBuf, int inLen, char *ou
    return decryptPkey(1, key, inBuf, inLen, outBuf);
 }
 //----------encryptPub---------------------------
+
+/**
+ * 
+ *   asymmetry  encrypt with  publicKey File,
+ *    
+ * 
+ */
 int cryptBase::encryptPub(char *pubKeyFile, char *inBuf, int inLen, char *outBuf)
 {
    RSA *key;
@@ -386,6 +530,12 @@ int cryptBase::encryptPub(char *pubKeyFile, char *inBuf, int inLen, char *outBuf
    }
    return encryptPkey(0, key, inBuf, inLen, outBuf);
 }
+/**
+ * 
+ *   asymmetry  decrypt with  privateKey File,
+ *    
+ * 
+ */
 int cryptBase::decryptPri(char *priKeyFile, char *inBuf, int inLen, char *outBuf)
 {
    RSA *key;
@@ -398,6 +548,12 @@ int cryptBase::decryptPri(char *priKeyFile, char *inBuf, int inLen, char *outBuf
    return decryptPkey(0, key, inBuf, inLen, outBuf);
 }
 //encryptPri:-----------------------------------------------
+/**
+ * 
+ *   asymmetry  encrypt with  privateKey File,
+ *    
+ * 
+ */
 int cryptBase::encryptPri(char *priKeyFile, char *inBuf, int inLen, char *outBuf)
 {
    RSA *key;
@@ -410,6 +566,12 @@ int cryptBase::encryptPri(char *priKeyFile, char *inBuf, int inLen, char *outBuf
    return encryptPkey(1, key, inBuf, inLen, outBuf);
 }
 //decryptPub:-----------------------------------------------
+/**
+ * 
+ *   asymmetry decrypt with  publicKey File,
+ *    
+ * 
+ */
 int cryptBase::decryptPub(char *pubKeyFile, char *inBuf, int inLen, char *outBuf)
 {
    RSA *key;
@@ -423,6 +585,10 @@ int cryptBase::decryptPub(char *pubKeyFile, char *inBuf, int inLen, char *outBuf
    return decryptPkey(1, key, inBuf, inLen, outBuf);
 }
 //==encryptPubkey===========================================================
+/**
+ *   asymmetry encrypt with  publicKey File,
+ *    
+ */
 int cryptBase::encryptPubkey(char *pubKeyFile, char *inBuf, int inLen, char *outBuf)
 {
    RSA *key;
@@ -503,6 +669,11 @@ int cryptBase::encryptPubkey(char *pubKeyFile, char *inBuf, int inLen, char *out
    len = buf1 - outBuf + ret;
    return len;
 }
+
+/**
+ *   asymmetry decrypt with  privateKey File,
+ *    
+ */
 int cryptBase::decryptPrikey(char *priKeyFile, char *inBuf, int inLen, char *outBuf)
 {
    RSA *key;
@@ -569,6 +740,11 @@ int cryptBase::decryptPrikey(char *priKeyFile, char *inBuf, int inLen, char *out
                   //printf("decode OK\n");
    return len;
 }
+
+/**
+ *   encode Base64  ,
+ *    
+ */
 int  cryptBase:: encodeBase64(const char *input, int length, char *bufOut)
 {
    BIO *bmem = NULL;
@@ -594,6 +770,10 @@ int  cryptBase:: encodeBase64(const char *input, int length, char *bufOut)
    BIO_free_all(b64);
    return bptr->length;
 }
+/**
+ *   decode Base64  ,
+ *    
+ */
 int  cryptBase:: decodeBase64(char *input,  char *bufOut)
 {
    BIO *b64 = NULL;
@@ -627,6 +807,10 @@ int length                  内存块的有效长度
 返回： 
 char *                      返回字符串指针，使用完毕后，必须用free函数释放。 
 */
+/**
+ *   encode Base64    
+ *    
+ */
 char* cryptBase:: encodeBase64(const char *input, int length, bool with_new_line)
 {
    BIO *bmem = NULL;
@@ -652,6 +836,10 @@ char* cryptBase:: encodeBase64(const char *input, int length, bool with_new_line
 
    return buff;
 }
+/**
+ *   decode Base64  ,for string only cannot decode binary
+ *    
+ */
 char* cryptBase:: decodeBase64(char *input, int length, bool with_new_line)
 {
    BIO *b64 = NULL;
@@ -672,17 +860,27 @@ char* cryptBase:: decodeBase64(char *input, int length, bool with_new_line)
 
    return buffer;
 }
+/**
+ *   encode Base64  ,
+ *    
+ */
 int  cryptBase::base64Encode(const char *encoded, int encodedLength, char *decoded)
 {
    return EVP_EncodeBlock((unsigned char *)decoded, (const unsigned char *)encoded, encodedLength);
 }
-
+/**
+ *   decode Base64  ,
+ *    
+ */
 // base解码
 int  cryptBase::base64Decode(const char *encoded, int encodedLength, char *decoded)
 {
    return EVP_DecodeBlock((unsigned char *)decoded, (const unsigned char *)encoded, encodedLength);
 }
-
+/**
+ *   decode hex  ,
+ *    
+ */
 int  cryptBase:: decodeHex(char *buf, char *retBuf)
 {
    int len, leno;
@@ -690,7 +888,7 @@ int  cryptBase:: decodeHex(char *buf, char *retBuf)
    char ch;
    unsigned char tmp;
    len = strlen(buf) / 2;
-   cout << " decode hex --len = " << len << "," << strlen(buf) << endl;
+   //cout << " decode hex --len = " << len << "," << strlen(buf) << endl;
 
    for (i = 0; i < len; i++)
    {
@@ -728,6 +926,10 @@ int  cryptBase:: decodeHex(char *buf, char *retBuf)
    // cout << "\n leno=" << leno << "==" << retBuf <<endl;
    return leno;
 }
+/**
+ *   encode Hex  ,
+ *    
+ */
 int cryptBase::encodeHex(const char *buf, int len,  char *str)
 {
    //const char *set = "0123456789abcdef";
@@ -757,10 +959,10 @@ int cryptBase::encodeHex(const char *buf, int len,  char *str)
 }
 
 
-/** 
-* @brief 二进制转十六进制 
-* @author  
-*/
+/**
+ *   encode hex  ,string only
+ *    
+ */
 string  cryptBase::bin2Hex(string _in)
 {
    std::string result;
@@ -780,11 +982,10 @@ string  cryptBase::bin2Hex(string _in)
    return result;
 }
 
-
-/** 
-* @brief 十六进制转二进制 
-* @author  
-*/
+/**
+ *   decode Hex  ,string only
+ *    
+ */
 string  cryptBase::hex2Bin(string _in)
 {
    long int binSize = 0;
@@ -800,6 +1001,10 @@ string  cryptBase::hex2Bin(string _in)
 }
 
 //========================================
+/**
+ *   digext   ,type = EVP_md5()
+ *    
+ */
 int cryptBase::digest(const char *orig, int lenOrig, char *out)
 {
    char *buf;
@@ -840,6 +1045,9 @@ int cryptBase::digest(const char *orig, int lenOrig, char *out)
    // printf("%s\n", out);
    return len;
 }
+/**
+ *    save privateKey RSA* to file
+ */
 
 //RSA:=======================================================
 int cryptBase:: prikeySavetoFile(RSA *rsa, const char *filename)
@@ -860,6 +1068,10 @@ int cryptBase:: prikeySavetoFile(RSA *rsa, const char *filename)
    fclose(file);
    return 1;
 }
+/**
+ *    save publicKey RSA* to file
+ */
+
 int cryptBase::pubkeySavetoFile(RSA *rsa, const char *filename)
 {
    FILE *file;
@@ -879,6 +1091,10 @@ int cryptBase::pubkeySavetoFile(RSA *rsa, const char *filename)
    return 1;
 }
 //---------------------------
+/**
+ *    get publicKey RSA* from file
+ */
+
 RSA* cryptBase::pubkeyGetfromFile(RSA *rsa, const char *filename)
 {
    FILE *file;
@@ -909,9 +1125,10 @@ RSA* cryptBase::pubkeyGetfromFile(RSA *rsa, const char *filename)
    fclose(file);
    return rsa;
 }
-/****************************************
- *read private key from file
- ****************************************/
+/**
+ *    get private Key RSA* from file
+ */
+
 RSA* cryptBase::prikeyGetfromFile(RSA *rsa, const char *filename)
 {
    FILE *file;
@@ -936,10 +1153,20 @@ RSA* cryptBase::prikeyGetfromFile(RSA *rsa, const char *filename)
    fclose(file);
    return rsa;
 }
+/**
+ *   create public KEY private KEY file
+ *   #define PUBLIC_KEY_FILE "mypub.key"
+ *   #define PRIVATE_KEY_FILE "mypri.key"
+ */
+
 int cryptBase::rsaCreateKeyFiles()
 {
    return rsaCreateKeyFiles(PRIVATE_KEY_FILE, PUBLIC_KEY_FILE);
 }
+/**
+ *   create publicKEy private KEY file
+ *   
+ */
 int cryptBase::rsaCreateKeyFiles(const char *priKey, const char *pubKey)
 {
    RSA *key;
@@ -964,6 +1191,10 @@ int cryptBase::rsaCreateKeyFiles(const char *priKey, const char *pubKey)
    return 1;
 }
 //sign:===============================================================================
+/**
+ *   sign with private key file
+ *   
+ */
 int cryptBase::sign(char *keyFile, char *plainText, char *cipherText)
 {
    unsigned int len;
@@ -995,7 +1226,10 @@ int cryptBase::sign(char *keyFile, char *plainText, char *cipherText)
    EVP_PKEY_free(pkey);
    return len;
 }
-
+/**
+ *  verify sign with public key file
+ *   
+ */
 bool  cryptBase::verifySign(char *pubFile, char *cipherText,  int cipherTextLen, char *plainText)
 {
    /* Get X509 */
@@ -1027,6 +1261,10 @@ bool  cryptBase::verifySign(char *pubFile, char *cipherText,  int cipherTextLen,
    }
    return true;
 }
+/**
+ *   verify sign with private key Char
+ *   
+ */
 bool  cryptBase::verifySignPubChar(char *pubChar, char *cipherText,  int cipherTextLen, char *plainText)
 {
 #if 0
@@ -1070,6 +1308,10 @@ bool  cryptBase::verifySignPubChar(char *pubChar, char *cipherText,  int cipherT
    }
    return true;
 }
+/**
+ *   sign with private key file, and encode to Hex
+ *   
+ */
 int  cryptBase::signHex(char *keyFile, char *plainText, char *cipherText)
 {
    char  hex[1000];
@@ -1090,6 +1332,10 @@ int  cryptBase::signHex(char *keyFile, char *plainText, char *cipherText)
    }
    return len1;
 }
+/**
+ *   decode Hex and verify sign with public  key file
+ *   
+ */
 bool cryptBase::verifyHex(char *pubFile, char *cipherText, char *plainText)
 {
    char  hex[1000];
@@ -1098,6 +1344,10 @@ bool cryptBase::verifyHex(char *pubFile, char *cipherText, char *plainText)
    //printf("len000 = %d\n",len);
    return verifySign(pubFile, hex, len, plainText);
 }
+/**
+ *   decode Hex and verify sign with public  key Char 
+ *   
+ */
 bool cryptBase::verifyHexPubChar(char *pubChar, char *cipherText, char *plainText)
 {
    char  hex[1000];
@@ -1107,24 +1357,46 @@ bool cryptBase::verifyHexPubChar(char *pubChar, char *cipherText, char *plainTex
    return verifySignPubChar(pubChar, hex, len, plainText);
 }
 // encrypt sy==============================================================
-
+/**
+ *   symmetry encrypt with fixed passwd
+ *   
+ */
 int cryptBase::encrypt(char *inBuf, int inLen, char *outBuf)
 {
    return cipher(inBuf, inLen, outBuf,(char *) MYPASSWD, 1);
 }
+/**
+ *   symmetry de crypt with fixed passwd
+ *   
+ */
 int cryptBase::decrypt(char *inBuf, int inLen, char *outBuf)
 {
    return cipher(inBuf, inLen, outBuf, (char *)MYPASSWD, 0);
 }
-
+/**
+ *   symmetry encrypt with   passwd
+ *   
+ */
 int cryptBase::encrypt(char *inBuf, int inLen, char *outBuf, char *passwd)
 {
    return cipher(inBuf, inLen, outBuf, passwd, 1);
 }
+/**
+ *   symmetry encrypt with   passwd
+ *   
+ */
 int cryptBase::decrypt(char *inBuf, int inLen, char *outBuf, char *passwd)
 {
    return cipher(inBuf, inLen, outBuf, passwd, 0);
 }
+/**
+ *   symmetry encrypt decrypt  with   passwd \n
+ *   mode = 1: encrypt 0:decrypt\n
+ *   EVP_MAX_KEY_LENGHT = 64;\n
+ *   ENCRYPT_BLOCK =1024 \n
+ *    evp_cipher = EVP_aes_128_cbc(); \n
+
+ */
 int cryptBase::cipher(char *inBuf, int inLen, char *outBuf, char *passwd, int mode) //mode = 1:encrypt,0:decrypt;
 {
 
@@ -1206,6 +1478,9 @@ int cryptBase::cipher(char *inBuf, int inLen, char *outBuf, char *passwd, int mo
    return ret;
 
 }
+/**
+ *  symmetry encrypt with passwd
+ */
 int cryptBase::encrypt1(char *inBuf, int inLen, char *outBuf, char *passwd) //mode = 1:encrypt,0:decrypt;
 {
 

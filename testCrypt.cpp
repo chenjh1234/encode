@@ -499,6 +499,37 @@ U_START(pwCrypt)
 
   
 U_END
+U_START(myuuid)
+    string str;
+    char buf[34];
+    int len;
+    cryptBase cr;
+    len  = cr.uuid1(buf);
+    str = "uuid1 = :" + STR(len) + "=!" + buf+"!";
+    PR(str);
+    GT(len,0);
+
+    len  = cr.uuid1(buf);
+    str = "uuid1 = :" + STR(len) + "=!" + buf+"!";
+    PR(str);
+    GT(len,0);
+
+    len  = cr.uuid1(buf);
+    str = "uuid1 = :" + STR(len) + "=!" + buf+"!";
+    PR(str);
+    GT(len,0);
+
+    str = cr.uuid1();
+    str = "uuid1() = :" + STR((int)str.length()) + "=!" + str +"!";
+    PR(str);
+    GT(len,0);
+
+    str = cr.uuid();
+    str = "uuid1() = :" + STR((int)str.length()) + "=!" + str +"!";
+    PR(str);
+    GT(len,0);
+U_END
+
 M_START
 //int main222(){
  
@@ -510,11 +541,13 @@ M_START
    testDigest("testDigest");
    //testCreateKeyFiles("CreateKeyFiles");
    
-#endif
+
    createPubH();
    U_TEST(encrypt)
    U_TEST(sign)
    U_TEST(pwCrypt)
+#endif
+   U_TEST(myuuid);
 
 M_END
 #if 0
