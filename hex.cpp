@@ -1,8 +1,10 @@
 #include "cryptBase.h"
+#include "mypubkey1.h"
 #include <stdio.h>
 #include <string.h>
 #include <openssl/evp.h>
 #include "testG.h"
+ 
 #if 0
 char * Base64Encode(const char * input, int length, bool with_new_line = true)  
 {  
@@ -61,6 +63,7 @@ void tt()
 }
 
 # endif
+
 void mytest(string mytest)
 {
    initUnit(mytest);
@@ -69,10 +72,56 @@ void mytest(string mytest)
    REM("i == 10,remark of the test:"); //option
    //cout << "line = " << __LINE__<<__FUNCTION__ << endl;
    EQ(i, 10);
-   EQ(i, 11);
+   NEQ(i, 11);
    endUnit();
 }
+int createPubH()
+{
+   BIO     *b = NULL;
+   BIO     *bb = NULL;
+   int     len = 0, outlen = 0,len1;
+   char    *out = NULL;
+   char *p;
  
+   b = BIO_new_file(PUBLIC_KEY_FILE, "r");
+   bb = BIO_new_file("mypubkey1.h", "w");
+   len = BIO_pending(b);
+   
+ //  printf("bio key file len = %s,%d\n", CMD_PUBKEYFILE,  len);
+
+
+   len = 20000;
+   out = (char *)OPENSSL_malloc(len);
+   len = 1;
+   printf("      unsigned char pubKey[] = ");
+   len1 = BIO_printf(bb, "      unsigned char pubKey1[] = ");
+   p = out;
+   while (len > 0)
+   {
+  
+      len = BIO_read(b, out + outlen, 1);
+      if (out[outlen] == '\n') 
+      { 
+          printf("\\\n"); // end of the line;
+          len1 = BIO_printf(bb,"\\\n");
+
+          out[outlen] = 0;
+          printf("      \"%s\\n\" ",p); 
+          len1 = BIO_printf(bb, "      \"%s\\n\" ",p);
+          p = out+outlen+1;      
+      }
+      outlen += len; 
+   }
+   printf(";\n"); // end of the all line;
+   len1 = BIO_printf(bb, ";\n");
+
+   BIO_free(b);
+   BIO_free(bb);
+    printf("bio file out = %s,%d\n", out, outlen);
+   free(out);
+   return 0;
+}
+
 void testBase64(string mytest)
 {
     initUnit(mytest);
@@ -226,14 +275,14 @@ U_START(encrypt)
     buf = new char[1000];
     buf1 = new char[1000];
     ch = ch1;
-    len = cr.encryptPubkey(PUBLIC_KEY_FILE,(char *)ch,strlen(ch),buf) ;
+    len = cr.encryptPubkey((char *)PUBLIC_KEY_FILE,(char *)ch,strlen(ch),buf) ;
    // len = cr.encryptPubkey("../pubout.key",(char *)ch,strlen(ch),buf,leno) ;
  
     str = "1234567,encryptPUB:" + STR(len) + "=!" + cr.bin2Hex(buf)+"!";
     PR(str);
     GT(len,0);
 
-    leno = cr.decryptPrikey(PRIVATE_KEY_FILE,(char *)buf,len,buf1) ;
+    leno = cr.decryptPrikey((char *)PRIVATE_KEY_FILE,(char *)buf,len,buf1) ;
    // len = cr.encryptPubkey("../pubout.key",(char *)ch,strlen(ch),buf,leno) ;
  
     str = "1234567,decryptPri:" + STR(leno) + "=!" + buf1+"!";
@@ -253,7 +302,7 @@ U_START(encrypt)
     ch = ch2;
     str="len in = " + STR((int)strlen(ch));
     PR(str);
-    len = cr.encryptPubkey(PUBLIC_KEY_FILE,(char *)ch,strlen(ch),buf) ;
+    len = cr.encryptPubkey((char *)PUBLIC_KEY_FILE,(char *)ch,strlen(ch),buf) ;
     GT(len,0);
   
     str = "1234567890*15,encryptPUB:" + STR(len) + "=!" + cr.bin2Hex(buf)+"!";
@@ -263,7 +312,7 @@ U_START(encrypt)
   //  GT(len,0);
       //printf("buf,buf1 = %x,%x\n",buf,buf1);
  
-    leno = cr.decryptPrikey(PRIVATE_KEY_FILE,(char *)buf,len,buf1) ;
+    leno = cr.decryptPrikey((char *)PRIVATE_KEY_FILE,(char *)buf,len,buf1) ;
  
     str = " decryptPri:" + STR(leno) + "=!" + buf1+"!";
     PR(str);
@@ -274,12 +323,12 @@ U_START(encrypt)
     ch = ch1;
     //len = cr.encryptPubkey(PUBLIC_KEY_FILE,(char *)ch,strlen(ch),buf,leno) ;
     REM(" encode the some input , when 2nd time   the result is not the same, decode is OK")
-    len = cr.encryptPub(PUBLIC_KEY_FILE,(char *)ch,strlen(ch),buf) ;
+    len = cr.encryptPub((char *)PUBLIC_KEY_FILE,(char *)ch,strlen(ch),buf) ;
     str = "1234567,encryptPUB:" + STR(len) + "=!" + cr.bin2Hex(buf)+"!";
     PR(str);
     GT(len,0);
 
-    leno = cr.decryptPrikey(PRIVATE_KEY_FILE,(char *)buf,len,buf1) ;
+    leno = cr.decryptPrikey((char *)PRIVATE_KEY_FILE,(char *)buf,len,buf1) ;
    // len = cr.encryptPubkey("../pubout.key",(char *)ch,strlen(ch),buf,leno) ;
  
     str = "1234567,decryptPri:" + STR(leno) + "=!" + buf1+"!";
@@ -291,12 +340,28 @@ U_START(encrypt)
     ch = ch1;
     //len = cr.encryptPubkey(PUBLIC_KEY_FILE,(char *)ch,strlen(ch),buf,leno) ;
     REM(" encode the some input , when 2nd time   the result is not the same, decode is OK")
-    len = cr.encryptPub(PUBLIC_KEY_FILE,(char *)ch,strlen(ch),buf) ;
+    len = cr.encryptPub((char *)PUBLIC_KEY_FILE,(char *)ch,strlen(ch),buf) ;
     str = "1234567,encryptPUB:" + STR(len) + "=!" + cr.bin2Hex(buf)+"!";
     PR(str);
     GT(len,0);
 
-    leno = cr.decryptPri(PRIVATE_KEY_FILE,(char *)buf,len,buf1) ;
+    leno = cr.decryptPri((char *)PRIVATE_KEY_FILE,(char *)buf,len,buf1) ;
+   // len = cr.encryptPubkey("../pubout.key",(char *)ch,strlen(ch),buf,leno) ;
+ 
+    str = "1234567,decryptPri:" + STR(leno) + "=!" + buf1+"!";
+    PR(str);
+    GT(leno,0);
+    EQ(string(ch),string(buf1));
+
+        ch = ch1;
+    //len = cr.encryptPubkey(PUBLIC_KEY_FILE,(char *)ch,strlen(ch),buf,leno) ;
+     
+    len = cr.encryptPubChar((char *)pubKey1,(char *)ch,strlen(ch),buf) ;
+    str = "1234567,encryptPubChar:" + STR(len) + "=!" + cr.bin2Hex(buf)+"!";
+    PR(str);
+    GT(len,0);
+
+    leno = cr.decryptPri((char *)PRIVATE_KEY_FILE,(char *)buf,len,buf1) ;
    // len = cr.encryptPubkey("../pubout.key",(char *)ch,strlen(ch),buf,leno) ;
  
     str = "1234567,decryptPri:" + STR(leno) + "=!" + buf1+"!";
@@ -304,19 +369,27 @@ U_START(encrypt)
     GT(leno,0);
     EQ(string(ch),string(buf1));
 //-------------------------------------------
-    PR("=======encryptPri==decryptPub================================================");
+    PR("=======encryptPri==decryptPub,decryptPubChar================================================");
     ch = ch1;
     //len = cr.encryptPubkey(PUBLIC_KEY_FILE,(char *)ch,strlen(ch),buf,leno) ;
     //REM(" encode the some input , when 2nd time   the result is not the same, decode is OK")
-    len = cr.encryptPri(PRIVATE_KEY_FILE,(char *)ch,strlen(ch),buf) ;
+    len = cr.encryptPri((char *)PRIVATE_KEY_FILE,(char *)ch,strlen(ch),buf) ;
     str = "1234567,encryptPri:" + STR(len) + "=!" + cr.bin2Hex(buf)+"!";
     PR(str);
     GT(len,0);
  
-    leno = cr.decryptPub(PUBLIC_KEY_FILE,(char *)buf,len,buf1) ;
+    leno = cr.decryptPub((char *)PUBLIC_KEY_FILE,(char *)buf,len,buf1) ;
    // len = cr.encryptPubkey("../pubout.key",(char *)ch,strlen(ch),buf,leno) ;
  
     str = "1234567,decryptPUB:" + STR(leno) + "=!" + buf1+"!";
+    PR(str);
+    GT(leno,0);
+    EQ(string(ch),string(buf1));
+
+     leno = cr.decryptPubChar((char *)pubKey1,(char *)buf,len,buf1) ;
+   // len = cr.encryptPubkey("../pubout.key",(char *)ch,strlen(ch),buf,leno) ;
+ 
+    str = "1234567,decryptPUBChar:" + STR(leno) + "=!" + buf1+"!";
     PR(str);
     GT(leno,0);
     EQ(string(ch),string(buf1));
@@ -324,21 +397,126 @@ U_START(encrypt)
 
     delete []buf;
     delete []buf1;
-U_END
 
+    cout << "fun = " << __FUNCTION__ <<endl;
+U_END
+//void test_sign()
+//{
+U_START(sign)
+    string str;
+    cryptBase cr;
+    char ch1[] = "1234567";
+    char *buf,*buf1,*ch;
+    int len,leno;
+    buf = new char[1000];
+    buf1 = new char[1000];
+    ch = ch1;
+    len = cr.sign((char *)PRIVATE_KEY_FILE,(char *)ch,buf) ;
+  
+    str = "1234567,sign:" + STR(len) + "=!" + buf+"!";
+    PR(str);
+    GT(len,0);
+    bool b;
+    b = cr.verifySign((char *)PUBLIC_KEY_FILE,(char *)buf,len,ch) ;
+    str = "1234567,verify:" + STR(len) ;
+    PR(str);
+    EQ(b,true);
+
+    PR("signHex,verifyHex============================================");
+    len = cr.signHex((char *)PRIVATE_KEY_FILE,(char *)ch,buf) ;
+   
+    str = "1234567,signHex:" + STR(len) + "=!" + buf+"!";    
+    PR(str);
+    
+    GT(len,0);
+    b = cr.verifyHex((char *)PUBLIC_KEY_FILE,(char *)buf,ch) ;
+    str = "1234567,verifyHex:" + STR(len) ;
+    PR(str);
+    EQ(b,true);
+
+    PR("signHex,verifyHex============================================");
+    len = cr.signHex((char *)PRIVATE_KEY_FILE,(char *)ch,buf) ;
+   
+    str = "1234567,signHex:" + STR(len) + "=!" + buf+"!";    
+    PR(str);
+    
+    GT(len,0);
+    b = cr.verifyHexPubChar((char *)pubKey1,(char *)buf,ch) ;
+    str = "1234567,verifyHex:" + STR(len) ;
+    PR(str);
+    EQ(b,true);
+U_END
+U_START(pwCrypt)
+    string str;
+    cryptBase cr;
+    char ch1[] = "1234567";
+    char ch2[] = "12345678901234567890123456789012345678901234567890";
+    char pw[]="123";
+    char *buf,*buf1,*buf2,*ch;
+    int len,leno;
+    buf = new char[1000];
+    buf1 = new char[1000];
+    buf2 = new char[1000];
+     PR("Encrypt1===Decrypt ====1234567==================");
+    ch = ch1;
+    len = cr.encrypt((char *)ch,strlen(ch),buf,pw) ;
+    cr.encodeHex(buf,len,buf1);
+    str = "1234567,PWencrypy:" + STR(len) + "=!" + buf1+"!";
+    PR(str);
+    GT(len,0);
+
+    len = cr.decrypt((char *)buf,len,buf1,pw) ;
+    //cr.encodeHex(buf1,len,buf);
+  
+    str = "1234567,PWdecrypy:" + STR(len) + "=!" + buf1+"!";
+    PR(str);
+    GT(len,0);
+    EQ(string(ch),string(buf1));
+     PR("Encrypt1=======1234567==================");
+   
+    len = cr.encrypt1((char *)ch,strlen(ch),buf,pw) ;
+    cr.encodeHex(buf,len,buf1);
+  
+    str = "1234567,PWencrypy1:" + STR(len) + "=!" + buf1+"!";
+    PR(str);
+    GT(len,0);
+     PR("Encrypt=====50=====Decrypt=========================");
+    ch = ch2;
+    len = cr.encrypt((char *)ch,strlen(ch),buf,pw) ;
+     cr.encodeHex(buf,len,buf1);
+      
+    str = "1234567890(50),PWencrypy:" + STR(len) + "=!" + buf1+"!";
+    PR(str);
+    GT(len,0);
+
+        len = cr.decrypt((char *)buf,len,buf1,pw) ;
+    //cr.encodeHex(buf1,len,buf);
+  
+    str = "1234567890(50),PWdecrypy:" + STR(len) + "=!" + buf1+"!";
+    PR(str);
+    GT(len,0);
+    EQ(string(ch),string(buf1));
+
+  
+U_END
 M_START
 //int main222(){
  
 #if 1
-   //mytest("MYTEST");
-   //testHex("testHex");
+    
+   mytest("MYTEST");
+   testHex("testHex");
    testBase64("testBase64");
-   //testDigest("testDigest");
+   testDigest("testDigest");
    //testCreateKeyFiles("CreateKeyFiles");
+   
 #endif
-   //U_TEST(encrypt)
+   createPubH();
+   U_TEST(encrypt)
+   U_TEST(sign)
+   U_TEST(pwCrypt)
 
-M_END0
+M_END
 #if 0
 M_START
    U_TEST(encrypt)

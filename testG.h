@@ -16,12 +16,12 @@ using namespace std;
 #define prSTR "------ " // for pr() : use print message for testFrame; start with 
 
 #define PRSTR "          " // for PR() : use print message for testFrame; start with
-
+#define VERSION 1.2
 
 #define PASSED "PASSED            : "  // string for PASSED
 #define NPASSED "NOT PASSED+++++++ : " // string for not passwd
 #define GAPSTR "     " // blank gap
-#define OUT cout<<PRSTR // output device ,start with UBGSTR;
+#define OUT cout<<PRSTR // output device ,start with PRSTR;
 
 void pr(string);// pring out message  start with prSTR
 void prt(string); // printout message form 0 colume
@@ -30,50 +30,12 @@ void PR(string);// pring out message  start with PRSTR // user use
 sumInfo sumUnit;
 sumInfo sumTest;
 
-/** 
-   test Frame example: 
-    
-   void mytest(string mytest) 
-   { 
-        initUnit( mytest);
-        int i;
-        i = 10;
-        REM("i == 10,remark of the test:");//option
-        EQ(i,10);
-        EQ(i,11);
-        endUnit();
-   } 
-   int main() 
-   { 
-        initTest();
-        mytest("MYTEST");
-        endTest();
-   } 
-    
-result: 
-{ 
-test ==============================begin
-1: UNIT ===============1:
------test MYTEST===============begin
------1: PASSED           : i == 10,remark of the test:
------2: NOT PASSED+++++++: i == 11,remark of the test:
------pass = 1, err = 1
------test MYTEST with Err ++++++++++++++++++++
------test MYTEST===============end
-test All==============================end
-test UNIT = 1
-test USECASE = 2
-test PASSED = 1
-test ERR = 1 
-}    
-   terms: 
-    a UNIT:    a function is a unit;
-    a usecase: a command Micro is a usecase;
-*/
 //function define:
 //
+ 
+
 #define U_START(x) \
-    void test_x(string mytest) {\
+    void x (string mytest) {\
     initUnit(mytest);
 
 #define U_END \
@@ -81,7 +43,7 @@ test ERR = 1
     }
 
 #define U_TEST(x) \
-    test_x(#x); 
+    x(#x); 
   
 #define M_START \
     int main() {\
@@ -100,11 +62,12 @@ int pass =0; // test ok
 int err =0;  // test err
 int unit = 0;
 int mypass,myerr;// test in Unit
+                
 string testUnit; // current UNIT name
 string testRemark;// current case remark;
 string paraMark;// current case remark;
 
-/** STR function used processing */
+/** STR function used processing: make x to string */
 #define STR_PROC(x) {\
     stringstream ss;\
     ss << x;\
@@ -322,4 +285,99 @@ void endTest()
 
 }
 #endif
+#if 0
 
+manual:
+  test function & main function define:
+
+    U_START(name) :unit test function begin
+    U_END         :unit test function end
+    M_START       : instate of main();  // main() { init_test()
+    M_END         : end of main()       //  end_test() } :add statistic info
+  micros: for usecase
+    GT(x,y)       :x>y
+    EQ(x,y)       :x==y
+    NEQ(x,y)      :x!=y
+    LT(x,y)       :x<y
+    EQF(x,y)      :x==y ,for floating
+    NEQF(x,y)     :x!=y ,for floating
+    NULL_PTR(x)   :x==NULL
+    VALID_PTR(x)  :x!=NULL
+  print:
+    PR(string x)         :prinf x  begin"    "
+    pr(string x)         :prinf x  begin"----"
+    prt(string x)        :same as cout 
+
+#endif
+
+#if 0 //version 1.2
+   test Frame example: 
+    
+   U_START(mytest)
+        int i;
+        i = 10;
+        REM("i == 10,remark of the test:");//option
+        EQ(i,10);
+        EQ(i,11);
+   U_END 
+   M_START 
+        UTEST(mytest)
+   M_END 
+result:
+{
+test ---------- ---------- begin---------- ---------- 
+1: UNIT ---------- mytest---------- 
+------ 1: PASSED            : EQ(i,10)      i == 10,remark of the test:
+------ 2: NOT PASSED+++++++ : EQ(i,11)      
+------ pass = 1, err = 1
+------ elapsed = 6.1e-05, cpuTime = 1
+------ test MYTEST with Err ++++++++++++++++++++
+test All---------- ---------- statistic---------- ---------- 
+test UNIT = 1
+test USECASE = 2
+test PASSED = 1
+test ERR = 1
+test Elapsed = 0.000293, cpuTime = 1
+test All---------- ---------- test ERR = 1---------- ---------- 
+}
+#endif
+#if 0
+   test Frame example: 
+    
+   void mytest(string mytest) 
+   { 
+        initUnit( mytest);
+        int i;
+        i = 10;
+        REM("i == 10,remark of the test:");//option
+        EQ(i,10);
+        EQ(i,11);
+        endUnit();
+   } 
+   int main() 
+   { 
+        initTest();
+        mytest("MYTEST");
+        endTest();
+   } 
+    
+result: 
+{ 
+test ==============================begin
+1: UNIT ===============1:
+-----test MYTEST===============begin
+-----1: PASSED           : i == 10,remark of the test:
+-----2: NOT PASSED+++++++: i == 11,remark of the test:
+-----pass = 1, err = 1
+-----test MYTEST with Err ++++++++++++++++++++
+-----test MYTEST===============end
+test All==============================end
+test UNIT = 1
+test USECASE = 2
+test PASSED = 1
+test ERR = 1 
+}    
+   terms: 
+    a UNIT:    a function is a unit;
+    a usecase: a command Micro is a usecase;
+#endif
