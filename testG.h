@@ -4,17 +4,17 @@
 
 #include <math.h>
 #include <stdio.h>
+#include <map>
 #include <iostream>
-#include "sumInfo.h"
+#include "LSummary.h"
 #include <sstream>
-
 using namespace std;
-//#include "ggeometry.h"
-#define BGSTR "---------- " //  use print message for testFrame; start with
-#define ERRSTR "++++++++++++++++++++" // printout for Micro command if error =1;
 
+//defines:
+#define BGSTR1 "----------"
+#define BGSTR "==============================" //  use print message for testFrame; start with
+#define ERRSTR "+++++++++++++++++++++++++++++++++++" // printout for Micro command if error =1;
 #define prSTR "------ " // for pr() : use print message for testFrame; start with 
-
 #define PRSTR "          " // for PR() : use print message for testFrame; start with
 #define VERSION 1.2
 
@@ -22,18 +22,33 @@ using namespace std;
 #define NPASSED "NOT PASSED+++++++ : " // string for not passwd
 #define GAPSTR "     " // blank gap
 #define OUT cout<<PRSTR // output device ,start with PRSTR;
-
+// print functions:
 void pr(string);// pring out message  start with prSTR
 void prt(string); // printout message form 0 colume
 void PR(string);// pring out message  start with PRSTR // user use
 
-sumInfo sumUnit;
-sumInfo sumTest;
+LSummary sumUnit;
+LSummary sumTest;
+map<string,int> errSum;
 
-//function define:
-//
+// for float compare functions:
+template <typename T>
+inline T gAbs(const T &t) { return t >= 0 ? t : -t; }
+template <typename T>
+inline const T &gMin(const T &a, const T &b) { if (a < b) return a; return b; }
+template <typename T>
+inline const T &gMax(const T &a, const T &b) { if (a < b) return b; return a; }
+static inline bool gEQ(double p1, double p2)
+{
+    return (gAbs(p1 - p2) <= 0.000000000001 * gMin(gAbs(p1), gAbs(p2)));
+}
+static inline bool gEQ(float p1, float p2)
+{
+    return (gAbs(p1 - p2) <= 0.00001f * gMin(gAbs(p1), gAbs(p2)));
+}
+
+//function Macro define:
  
-
 #define U_START(x) \
     void x (string mytest) {\
     initUnit(mytest);
@@ -46,7 +61,7 @@ sumInfo sumTest;
     x(#x); 
   
 #define M_START \
-    int main() {\
+    int main(int argc,char **argv) {\
     initTest();
 
 #define M_END \
@@ -56,7 +71,7 @@ sumInfo sumTest;
 #define M_END0  }
   
   
-//
+// statistic init:
 
 int pass =0; // test ok
 int err =0;  // test err
@@ -66,6 +81,8 @@ int mypass,myerr;// test in Unit
 string testUnit; // current UNIT name
 string testRemark;// current case remark;
 string paraMark;// current case remark;
+
+// data number to to string
 
 /** STR function used processing: make x to string */
 #define STR_PROC(x) {\
@@ -87,6 +104,8 @@ string STR(float x)
 string STR(double x)
      STR_PROC(x)
 
+//statistic and print out
+
 /** command common used processing :printout PASSED or NOT
  *  PASSWD */
 #define COMMAND_PROC \
@@ -98,7 +117,7 @@ testRemark = "";
  /**
  * Micro remark:REM : comment for next Micro command:
  */
-#define REM(x)  testRemark = x;
+#define REM(x)  testRemark = #x;
 
 
 /// Micro command (EQ,NEQ,GT,LT,NULL_PTR,VALID_PTR);
@@ -158,7 +177,7 @@ paraMark = string("VALID_PTR(")+#x+") ";\
 if (x != NULL ) \
 COMMAND_PROC
 
-
+// functions :
 /**
  * print out string Leading with TAB = "------"; 
  * used for testUnit; 
@@ -223,7 +242,7 @@ void initUnit(string name)
 void endUnit()
 {
     string str;
-    string name;
+    string name,uname;
     name = testUnit;
     //stringstream ss;
     //result:
@@ -245,7 +264,12 @@ void endUnit()
     //str =  "test "+name + BGSTR+ "end";
    // pr(str);
     // statistic:
-    pass = pass + mypass;
+    if (myerr !=0)  
+    {
+        uname = STR(unit+1)+":"+name;
+        errSum[uname] = myerr;
+    }
+    pass = pass + mypass; 
     err = err + myerr;
     unit ++;
 }
@@ -258,8 +282,8 @@ void endUnit()
 void endTest()
 {
     string str,str1;
-    int i;
-    str = string("test All") + BGSTR + BGSTR+ "statistic" + BGSTR + BGSTR;
+    //int i;
+    str = string("test All") + BGSTR1 + BGSTR1+ "statistic" + BGSTR1 + BGSTR1;
     prt(str);
     str = "test UNIT = "+ STR(unit);
     prt(str);
@@ -278,11 +302,25 @@ void endTest()
 
     // all
     if (err == 0) 
-        str = string("test All") + BGSTR + BGSTR + "end" + " OK" + BGSTR + BGSTR;
+        str = string("test All") + BGSTR1 + BGSTR1 + "end" + " OK" + BGSTR1 + BGSTR1;
     else
-         str = string("test All") + BGSTR + BGSTR + str1 + BGSTR + BGSTR;
+         str = string("test All") + BGSTR1 + BGSTR1 + str1 + BGSTR1 + BGSTR1;
     prt(str);
+      // pr errrs:
+    QList<int> unitList;
+    if (err !=0) 
+    {
+        str = string("Errs") + BGSTR1 + BGSTR1+ "errs" + BGSTR1 + BGSTR1;
+        prt(str);
 
+        map<string,int>::iterator iter;   
+        for( iter = errSum.begin(); iter != errSum.end(); iter++ ) 
+        {
+            str = string("unit") +  iter->first  + " = " + STR(iter->second);
+            pr(str);
+        }
+
+    }
 }
 #endif
 #if 0

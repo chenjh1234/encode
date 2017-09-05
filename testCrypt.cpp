@@ -1,68 +1,10 @@
-#include "cryptBase.h"
+#include "LEncrypt.h"
 #include "mypubkey1.h"
 #include <stdio.h>
 #include <string.h>
 #include <openssl/evp.h>
 #include "testG.h"
  
-#if 0
-char * Base64Encode(const char * input, int length, bool with_new_line = true)  
-{  
-    BIO * bmem = NULL;  
-    BIO * b64 = NULL;  
-    BUF_MEM * bptr = NULL;  
-  
-    b64 = BIO_new(BIO_f_base64());  
-    if(!with_new_line) {  
-        BIO_set_flags(b64, BIO_FLAGS_BASE64_NO_NL);  
-    }  
-    bmem = BIO_new(BIO_s_mem());  
-    b64 = BIO_push(b64, bmem);  
-    BIO_write(b64, input, length);  
-    BIO_flush(b64);  
-    BIO_get_mem_ptr(b64, &bptr);  
-  
-    char * buff = (char *)malloc(bptr->length + 1);  
-    memcpy(buff, bptr->data, bptr->length);  
-    buff[bptr->length] = 0;  
-  
-    BIO_free_all(b64);  
-  
-    return buff;  
-}  
-  
-char * Base64Decode(char * input, int length, bool with_new_line = true)  
-{  
-    BIO * b64 = NULL;  
-    BIO * bmem = NULL;  
-    char * buffer = (char *)malloc(length);  
-    memset(buffer, 0, length);  
-  
-    b64 = BIO_new(BIO_f_base64());  
-    if(!with_new_line) {  
-        BIO_set_flags(b64, BIO_FLAGS_BASE64_NO_NL);  
-    }  
-    bmem = BIO_new_mem_buf(input, length);  
-    bmem = BIO_push(b64, bmem);  
-    BIO_read(bmem, buffer, length);  
-  
-    BIO_free_all(bmem);  
-  
-    return buffer;  
-}  
-
-void tt()
-{
-    string enc_input = "1234567";
-    char * enc_output = Base64Encode(enc_input.c_str(), enc_input.length());  
-    cout << "Base64 Encoded:" << endl << "~" << enc_output << "~" << endl << endl;  
-  
-    string dec_input = enc_output;  
-    char * dec_output = Base64Decode((char *)dec_input.c_str(), dec_input.length());  
-    cout << "Base64 Decoded:" << endl << "~" << dec_output << "~" << endl << endl;  
-}
-
-# endif
 
 void mytest(string mytest)
 {
@@ -127,7 +69,7 @@ void testBase64(string mytest)
     initUnit(mytest);
 
     string str;
-    cryptBase cr;
+    LEncrypt cr;
     char ch[] = "1234567";
     char *buf,*buf1;
     int len;
@@ -171,7 +113,7 @@ void testBase64(string mytest)
     PR(str);  
     
     len = cr.decodeBase64(result, org);  
-    EQ(len,strlen(test));
+    EQ(len,(int)strlen(test));
     str = "hello,decodeBase64" + STR(len) + "=!" + org+"!";
     PR(str);   
 
@@ -182,7 +124,7 @@ void testHex(string mytest)
     initUnit(mytest);
 
     string str,str1;
-    cryptBase cr;
+    LEncrypt cr;
     char ch[] = "1234567";
     char *buf,*buf1;
     int len;
@@ -222,7 +164,7 @@ void testDigest(string mytest)
     initUnit(mytest);
 
     string str;
-    cryptBase cr;
+    LEncrypt cr;
     char ch[] = "1234567";
     char *buf;
     int len;
@@ -239,7 +181,7 @@ void testCreateKeyFiles(string mytest)
     initUnit(mytest);
 
     string str;
-    cryptBase cr;
+    LEncrypt cr;
     RSA *key;
     key = RSA_new();
     NEQ(key,NULL);
@@ -254,7 +196,7 @@ void testCreateKeyFiles(string mytest)
 
 void tt1()
 {
-    cryptBase cr;
+    LEncrypt cr;
     char test[] = "hello";  
     char result[1000] = {0}; // ?????  
     cout << cr.base64Encode(test, strlen(test), result) << endl;  
@@ -268,7 +210,7 @@ void tt1()
 }
 U_START(encrypt)
     string str;
-    cryptBase cr;
+    LEncrypt cr;
     char ch1[] = "1234567";
     char *buf,*buf1,*ch;
     int len,leno;
@@ -368,6 +310,8 @@ U_START(encrypt)
     PR(str);
     GT(leno,0);
     EQ(string(ch),string(buf1));
+
+    
 //-------------------------------------------
     PR("=======encryptPri==decryptPub,decryptPubChar================================================");
     ch = ch1;
@@ -393,7 +337,38 @@ U_START(encrypt)
     PR(str);
     GT(leno,0);
     EQ(string(ch),string(buf1));
-  
+ 
+    PR("=======encryptPub==decryptPri================================================");
+    char ch315[316];
+    int i;
+    for (i = 0; i <315 ;i++)
+    {
+        ch315[i] = '1';
+    }
+    ch315[315] = 0;
+    ch = ch315; 
+    int lenin;
+    lenin = 315;
+    //len = cr.encryptPubkey(PUBLIC_KEY_FILE,(char *)ch,strlen(ch),buf,leno) ;
+   
+    str =  "lenin = " + STR(lenin)  ;
+    PR(str);
+    len = cr.encryptPub((char *)PUBLIC_KEY_FILE,(char *)ch,lenin,buf) ;
+    str =  "len = " + STR(len)  ;
+    PR(str);
+
+    REM(" encode the in = 315  ");
+    GT(len,0);
+
+    leno = cr.decryptPri((char *)PRIVATE_KEY_FILE,(char *)buf,len,buf1) ;
+   // len = cr.encryptPubkey("../pubout.key",(char *)ch,strlen(ch),buf,leno) ;
+ 
+    str = "leno = " +  STR(leno)   ;
+    PR(str);
+    EQ(leno,lenin);
+    EQ(string(ch),string(buf1));
+    buf1[315] = 0;
+    EQ(string(ch),string(buf1));
 
     delete []buf;
     delete []buf1;
@@ -404,10 +379,10 @@ U_END
 //{
 U_START(sign)
     string str;
-    cryptBase cr;
+    LEncrypt cr;
     char ch1[] = "1234567";
     char *buf,*buf1,*ch;
-    int len,leno;
+    int len;
     buf = new char[1000];
     buf1 = new char[1000];
     ch = ch1;
@@ -448,12 +423,12 @@ U_START(sign)
 U_END
 U_START(pwCrypt)
     string str;
-    cryptBase cr;
+    LEncrypt cr;
     char ch1[] = "1234567";
     char ch2[] = "12345678901234567890123456789012345678901234567890";
     char pw[]="123";
     char *buf,*buf1,*buf2,*ch;
-    int len,leno;
+    int len;
     buf = new char[1000];
     buf1 = new char[1000];
     buf2 = new char[1000];
@@ -497,13 +472,18 @@ U_START(pwCrypt)
     GT(len,0);
     EQ(string(ch),string(buf1));
 
+    str = cr.getMac();
+    PR(str);
+    REM("str = cr.getMac()")
+    GT(str.length(),0);
+
   
 U_END
 U_START(myuuid)
     string str;
     char buf[34];
     int len;
-    cryptBase cr;
+    LEncrypt cr;
     len  = cr.uuid1(buf);
     str = "uuid1 = :" + STR(len) + "=!" + buf+"!";
     PR(str);
@@ -529,9 +509,54 @@ U_START(myuuid)
     PR(str);
     GT(len,0);
 U_END
+U_START(cmd)
+    string str,cmd;
+    char buf[34];
+    int len;
+    LEncrypt cr;
+    cmd = "pwd";
+    str  = cr.cmd(cmd);
+    str = str + "," + STR((int)str.length());
+    PR(str);
+    GT(str.length(),0);
 
+    cmd = "ls -ltr /";
+    str  = cr.cmd(cmd);
+    //str = str + "," + STR((int)str.length());
+    //PR(str);
+    GT(str.length(),0);
+U_END
+U_START(encodePass)
+    string inp,hex,ret;
+    char passwd[]="12345";
+    int len;
+    LEncrypt cr;
+
+    inp  = "1234567890";
+    hex = cr.encodePassHex(inp,passwd);
+    GT(hex.length(),0);
+    qDebug() << "inLen = 10 ,encodeLen = " << hex.length() << hex.c_str();
+
+    ret= cr.decodePassHex(hex,passwd);
+    GT(ret.length(),0);
+    EQ(ret,inp);
+
+    inp  = "12345678905125123452362362362356236265463434634634634634634634634666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666634";
+    hex = cr.encodePassHex(inp,passwd);
+    GT(hex.length(),0);
+    qDebug() << "inLen = 10 ,encodeLen = " << hex.length()  <<  hex.c_str();
+
+    ret= cr.decodePassHex(hex,passwd);
+    GT(ret.length(),0);
+    EQ(ret,inp);
+U_END
+
+#ifndef TEST_UNIT
 M_START
-//int main222(){
+#else
+void testCrypt()
+{
+#endif
  
 #if 1
     
@@ -539,20 +564,22 @@ M_START
    testHex("testHex");
    testBase64("testBase64");
    testDigest("testDigest");
-   //testCreateKeyFiles("CreateKeyFiles");
-   
-
+   //testCreateKeyFiles("CreateKeyFiles");   
    createPubH();
-   U_TEST(encrypt)
+   U_TEST(myuuid);
    U_TEST(sign)
    U_TEST(pwCrypt)
-#endif
-   U_TEST(myuuid);
-
-M_END
-#if 0
-M_START
    U_TEST(encrypt)
-M_END0
+   U_TEST(cmd)
+   U_TEST(encodePass)
+   
+#endif 
+//U_TEST(sign)
+  
+#ifndef TEST_UNIT
+M_END
+#else
+}
 #endif
-
+     
+ 

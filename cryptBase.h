@@ -1,6 +1,15 @@
-#ifndef CRYPTBASE_H
-#define CRYPTBASE_H
-
+#ifndef LENCRYPT_H
+#define LENCRYPT_H
+#include <cstdio>
+#include <cstring>
+#include <cstdlib>
+#include <unistd.h>
+#include <net/if.h>
+#include <sys/ioctl.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <string>
+#include <fstream>
 #include <stdio.h>  
 //#include <uuid.h>
 #include <openssl/evp.h>  
@@ -37,17 +46,21 @@ using namespace std;
 static const char rnd_seed[] = "string to make the random number generator initialized";  
 
 
-class cryptBase
+class LEncrypt
 {
 public:
-    cryptBase();
-    ~cryptBase();
+    LEncrypt();
+    ~LEncrypt();
 
 // asymmetry encrypt:  
     // all things is binary not string;
     //pub --->pri
     int lenOfEncryptP(int len);
     int lenOfDecryptP(int len);
+
+    string encryptPubHex(char *pubKeyFile,char *inBuf);
+    string decryptPriHex(char *priKeyFile,char *inBuf);
+
     int encryptPub(char *pubKeyFile, char *inBuf, int inLen, char *outBuf);
     int decryptPri(char *priKeyFile, char *inBuf, int inLen, char *outBuf);
     // pri--->pub
@@ -98,15 +111,16 @@ public:
     // encodeHex:
     /// for pure binary,can process any thing
     int encodeHex(const char *buf, int len,  char * str);
-    int  decodeHex( char *hexbuf, char *retBuf);//not yet
+    int  decodeHex( char *hexbuf, char *retBuf); 
     // string limited,
     string  hex2Bin(string _in) ; 
     string  bin2Hex(string _in) ;
 // digest:
     int  digest(const char *orig, int lenOrig, char *out);
+    string digest(char *orig);
 //uuid:
     string uuid();// get from cmd = genuuid in linux;
-    string uuid1();// start frome the same,
+    string uuid1();// start frome the same serial,
     int uuid1(char *buf);
 
 
@@ -120,6 +134,8 @@ public:
     int encryptPkey(int mode ,RSA *key, char *inBuf,int inlen,char *outBuf);
 /// decrypt: mode 0:rivate,1:public
     int decryptPkey(int mode ,RSA *key, char *inBuf,int inlen,char *outBuf);
+/// getMac()
+    string getMac();
 
 //a keys:
 
